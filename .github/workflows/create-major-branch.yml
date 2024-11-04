@@ -51,14 +51,13 @@ jobs:
         git config --global user.name "github-actions[bot]"
 
     - name: Determine branch name
-      run: BRANCH_NAME=v$(npm pkg get version | tr -d \" | cut -d. -f1,2).x >> $GITHUB_ENV
+      run: echo "BRANCH_NAME=v$(npm pkg get version | tr -d \" | cut -d. -f1,2).x" >> $GITHUB_ENV
         
     - name: Create branch for current version 
       run: git branch ${{ env.BRANCH_NAME }} main
 
     - name: Bump package version of main
-      run: |
-        echo "NEW_VERSION=$(npm --no-git-tag-version version ${{ github.event.inputs.cadenza-version }}.0-dev)" >> $GITHUB_ENV
+      run: echo "NEW_VERSION=$(npm --no-git-tag-version version ${{ github.event.inputs.cadenza-version }}.0-dev)" >> $GITHUB_ENV
 
     - name: Set release tag to 'latest'
       run: echo "RELEASE_TAG=latest" >> $GITHUB_ENV
@@ -74,7 +73,7 @@ jobs:
     - name: Commit and tag changes
       run: |
         git add "package.json"
-        git commit -m "chore: branch off as ${{ env.BRANCH_NAME }} and bump main to ${{ env.NEW_VERSION }}"
+        git commit -m "chore: branch off main as ${{ env.BRANCH_NAME }} and bump main version to ${{ env.NEW_VERSION }}"
 
     - name: Push changes
       env:
