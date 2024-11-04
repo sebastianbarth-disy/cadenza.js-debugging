@@ -62,14 +62,6 @@ jobs:
     - name: Set release tag to 'latest'
       run: echo "RELEASE_TAG=latest" >> $GITHUB_ENV
 
-    # Update changelog unreleased section with new version
-    - name: Update changelog
-      uses: superfaceai/release-changelog-action@v2
-      with:
-        path-to-changelog: CHANGELOG.md
-        version: ${{ env.NEW_VERSION }}
-        operation: release
-
     - name: Commit and tag changes
       run: |
         git add "package.json"

@@ -35,8 +35,10 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
 
-    - name: Bump package version
-      run: echo "NEW_VERSION=$(npm --no-git-tag-version version patch)" >> $GITHUB_ENV
+    - name: Prepare package version (1.2.3-dev => 1.2.3) 
+      run: |
+        npm --no-git-tag-version version patch                                  # Remove -dev suffix
+        echo "RELEASE_VERSION=$(npm pkg get version | tr -d \")" >> $GITHUB_ENV # Determine RELEASE_VERSION
 
     - name: Set release tag to 'latest'
       run: echo "RELEASE_TAG=latest" >> $GITHUB_ENV
@@ -46,15 +48,26 @@ jobs:
       uses: superfaceai/release-changelog-action@v2
       with:
         path-to-changelog: CHANGELOG.md
-        version: ${{ env.NEW_VERSION }}
+        version: ${{ env.RELEASE_VERSION }}
         operation: release
 
-    - name: Commit and tag changes
+    - name: Commit release and tag it
       run: |
         git add "package.json"
         git add "CHANGELOG.md"
-        git commit -m "chore: release ${{ env.NEW_VERSION }}"
-        git tag ${{ env.NEW_VERSION }}
+        git commit -m "chore: release ${{ env.RELEASE_VERSION }}"
+        git tag ${{ env.RELEASE_VERSION }}
+
+    - name: Bump package version to new dev version (1.2.3 => 1.2.4-dev)
+      run: |
+        npm --no-git-tag-version version patch                                  # Increase last version segment
+        echo "NEW_VERSION=$(npm pkg get version | tr -d \")-dev" >> $GITHUB_ENV # Determine NEW_VERSION with -dev suffix
+        npm --no-git-tag-version version ${{ env.NEW_VERSION }}                 # Set main to NEW_VERISON
+
+    - name: Commit version bump
+      run: |
+        git add "package.json"
+        git commit -m "chore: bump up version to ${{ env.NEW_VERSION }}"
 
     - name: Push changes
       env:
@@ -66,13 +79,13 @@ jobs:
       uses: superfaceai/release-changelog-action@v2
       with:
         path-to-changelog: CHANGELOG.md
-        version: ${{ env.NEW_VERSION }}
+        version: ${{ env.RELEASE_VERSION }}
         operation: read
 
     - name: Update GitHub release documentation
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ env.NEW_VERSION }}
+        tag_name: ${{ env.RELEASE_VERSION }}
         body: ${{ steps.get-changelog.outputs.changelog }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
