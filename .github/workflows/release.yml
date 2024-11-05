@@ -62,7 +62,7 @@ jobs:
       run: |
         npm --no-git-tag-version version patch                                                              # Determine next release version
         DEV_VERSION=$(npm pkg get version | tr -d \")-dev && echo "DEV_VERSION=$DEV_VERSION" >> $GITHUB_ENV # Determine DEV_VERSION with -dev suffix
-        npm --no-git-tag-version version ${{ env.DEV_VERSION }}                                             # Set main to NEW_VERISON
+        npm --no-git-tag-version version $DEV_VERSION                                                       # Set main to NEW_VERISON
 
     - name: Commit version bump
       run: |
