@@ -60,14 +60,14 @@ jobs:
 
     - name: Bump package version to new dev version (1.2.3 => 1.2.4-dev)
       run: |
-        npm --no-git-tag-version version patch                                  # Increase last version segment
-        echo "NEW_VERSION=$(npm pkg get version | tr -d \")-dev" >> $GITHUB_ENV # Determine NEW_VERSION with -dev suffix
-        npm --no-git-tag-version version ${{ env.NEW_VERSION }}                 # Set main to NEW_VERISON
+        npm --no-git-tag-version version patch                                                              # Determine next release version
+        DEV_VERSION=$(npm pkg get version | tr -d \")-dev && echo "DEV_VERSION=$DEV_VERSION" >> $GITHUB_ENV # Determine DEV_VERSION with -dev suffix
+        npm --no-git-tag-version version ${{ env.DEV_VERSION }}                                             # Set main to NEW_VERISON
 
     - name: Commit version bump
       run: |
         git add "package.json"
-        git commit -m "chore: bump up version to ${{ env.NEW_VERSION }}"
+        git commit -m "chore: bump up version to ${{ env.DEV_VERSION }}"
 
     - name: Push changes
       env:
