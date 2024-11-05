@@ -35,7 +35,7 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
 
-    - name: Prepare package version (1.2.3-dev => 1.2.3) 
+    - name: Prepare package version (e.g. 1.2.3-dev => 1.2.3) 
       run: |
         npm --no-git-tag-version version patch                                  # Remove -dev suffix
         echo "RELEASE_VERSION=$(npm pkg get version | tr -d \")" >> $GITHUB_ENV # Determine RELEASE_VERSION
@@ -58,7 +58,7 @@ jobs:
         git commit -m "chore: release ${{ env.RELEASE_VERSION }}"
         git tag ${{ env.RELEASE_VERSION }}
 
-    - name: Bump package version to new dev version (1.2.3 => 1.2.4-dev)
+    - name: Bump package version to new dev version (e.g. 1.2.3 => 1.2.4-dev)
       run: |
         npm --no-git-tag-version version patch                                                              # Determine next release version
         DEV_VERSION=$(npm pkg get version | tr -d \")-dev && echo "DEV_VERSION=$DEV_VERSION" >> $GITHUB_ENV # Determine DEV_VERSION with -dev suffix
