@@ -1,4 +1,4 @@
-name: Create Major Branch
+name: Branch off Cadenza Version
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
         required: true
         description: |
           Next Cadenza Main Version
-          (e.g. '10.2' for setting `main` branch version to 10.2.0-dev for being used in Cadenza 10.2 after branching off the last used version)
+          (e.g. '10.2' for setting `main` branch version to 10.2.0-dev as corresponding major-minor version of in Cadenza 10.2.)
     
 
 jobs:
