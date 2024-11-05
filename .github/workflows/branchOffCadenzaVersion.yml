@@ -40,10 +40,6 @@ jobs:
         node-version-file: package.json
         cache: 'npm'
 
-    - run: npm ci
-    - run: npm test
-    - run: npm run build
-
     # Needed for creating the tag
     - name: Configure Git
       run: |
@@ -58,9 +54,6 @@ jobs:
 
     - name: Bump package version of main
       run: echo "NEW_VERSION=$(npm --no-git-tag-version version ${{ github.event.inputs.cadenza-version }}.0-dev)" >> $GITHUB_ENV
-
-    - name: Set release tag to 'latest'
-      run: echo "RELEASE_TAG=latest" >> $GITHUB_ENV
 
     - name: Commit and tag changes
       run: |
