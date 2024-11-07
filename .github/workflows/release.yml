@@ -74,7 +74,7 @@ jobs:
       - name: Update GitHub release documentation
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.RELEASE_VERSION }}
+          tag_name: v${{ env.RELEASE_VERSION }}
           body: ${{ steps.get-changelog.outputs.changelog }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -83,7 +83,7 @@ jobs:
         run: |
           npm pkg get version | tr -d \"                                          # DEBUG
           echo npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"   # DEBUG
-          echo npm publish --verbose --access=public --tag=${{ env.RELEASE_TAG }} # DEBUG
+          echo npm publish --verbose --access=public --tag=v${{ env.RELEASE_TAG }} # DEBUG
         env:
           NPM_TOKEN: ${{ secrets.NPMJS_ACCESS_TOKEN }}
 
