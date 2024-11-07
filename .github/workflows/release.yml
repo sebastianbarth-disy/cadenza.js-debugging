@@ -95,6 +95,7 @@ jobs:
       - name: Commit version bump
         run: |
           git add "package.json"
+          git add "package.json"
           git commit -m "chore: bump up version to ${{ env.DEV_VERSION }}"
 
       - name: Push changes
