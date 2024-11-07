@@ -6,23 +6,7 @@ This project uses a version scheme based on the Cadenza main version in the form
 
 ## Unreleased
 
-## 10.7.1 - 2024-11-07
-
-## 10.7.0 - 2024-11-05
-
-## 10.6.3 - 2024-11-05
-
-## 10.6.2 - 2024-11-05
-
-## 10.6.1 - 2024-11-05
-
-## 10.6.0 - 2024-11-05
-
-## 10.2.8 - 2024-11-07
-
-## 10.2.7 - 2024-11-07
-
-## 10.2.2 - 2024-10-24
+## 10.2.2 - 2024-11-07
 ### Added
 - `CadenzaReloadEvent`
 - `additionalLayers` option for `CadenzaClient#createGeometry` and `CadenzaClient#editGeometry`
