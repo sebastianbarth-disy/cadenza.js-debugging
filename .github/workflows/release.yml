@@ -2,97 +2,102 @@ name: Release
 
 on:
   workflow_dispatch
-    
 
 jobs:
   release:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/create-github-app-token@v1
-      id: app-token
-      with:
-        app-id: ${{ vars.DISY_RELEASE_APP_ID }}
-        private-key: ${{ secrets.DISY_RELEASE_APP_SECRET }}
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        token: ${{ steps.app-token.outputs.token }}
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version-file: package.json
-        cache: 'npm'
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.DISY_RELEASE_APP_ID }}
+          private-key: ${{ secrets.DISY_RELEASE_APP_SECRET }}
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: 'npm'
 
-    - run: npm ci
-    - run: npm test
-    - run: npm run build
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      
+      # Needed for creating the tag
+      - name: Configure Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
 
-    # Needed for creating the tag
-    - name: Configure Git
-      run: |
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"
+      - name: Prepare package version (e.g. 1.2.3-dev => 1.2.3)
+        run: |
+          npm --no-git-tag-version version patch                                  # Remove -dev suffix
+          echo "RELEASE_VERSION=$(npm pkg get version | tr -d \")" >> $GITHUB_ENV # Determine RELEASE_VERSION
 
-    - name: Prepare package version (e.g. 1.2.3-dev => 1.2.3) 
-      run: |
-        npm --no-git-tag-version version patch                                  # Remove -dev suffix
-        echo "RELEASE_VERSION=$(npm pkg get version | tr -d \")" >> $GITHUB_ENV # Determine RELEASE_VERSION
+      - name: Set release tag to 'latest'
+        run: echo "RELEASE_TAG=latest" >> $GITHUB_ENV
+      
+      # Update changelog unreleased section with new version
+      - name: Update changelog
+        uses: superfaceai/release-changelog-action@v2
+        with:
+          path-to-changelog: CHANGELOG.md
+          version: ${{ env.RELEASE_VERSION }}
+          operation: release
 
-    - name: Set release tag to 'latest'
-      run: echo "RELEASE_TAG=latest" >> $GITHUB_ENV
+      - name: Commit release and tag it
+        run: |
+          git add "package.json"
+          git add "CHANGELOG.md"
+          git commit -m "chore: release ${{ env.RELEASE_VERSION }}"
+          git tag ${{ env.RELEASE_VERSION }}
 
-    # Update changelog unreleased section with new version
-    - name: Update changelog
-      uses: superfaceai/release-changelog-action@v2
-      with:
-        path-to-changelog: CHANGELOG.md
-        version: ${{ env.RELEASE_VERSION }}
-        operation: release
+      - name: Push changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: git push origin && git push --tags
 
-    - name: Commit release and tag it
-      run: |
-        git add "package.json"
-        git add "CHANGELOG.md"
-        git commit -m "chore: release ${{ env.RELEASE_VERSION }}"
-        git tag ${{ env.RELEASE_VERSION }}
+      - id: get-changelog
+        name: Get version changelog
+        uses: superfaceai/release-changelog-action@v2
+        with:
+          path-to-changelog: CHANGELOG.md
+          version: ${{ env.RELEASE_VERSION }}
+          operation: read
 
-    - name: Bump package version to new dev version (e.g. 1.2.3 => 1.2.4-dev)
-      run: |
-        npm --no-git-tag-version version patch                                                              # Determine next release version
-        DEV_VERSION=$(npm pkg get version | tr -d \")-dev && echo "DEV_VERSION=$DEV_VERSION" >> $GITHUB_ENV # Determine DEV_VERSION with -dev suffix
-        npm --no-git-tag-version version $DEV_VERSION                                                       # Set main to NEW_VERISON
+      - name: Update GitHub release documentation
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          body: ${{ steps.get-changelog.outputs.changelog }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Commit version bump
-      run: |
-        git add "package.json"
-        git commit -m "chore: bump up version to ${{ env.DEV_VERSION }}"
+      - name: Publish npm package
+        run: |
+          npm pkg get version | tr -d \"                                          # DEBUG
+          echo npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"   # DEBUG
+          echo npm publish --verbose --access=public --tag=${{ env.RELEASE_TAG }} # DEBUG
+        env:
+          NPM_TOKEN: ${{ secrets.NPMJS_ACCESS_TOKEN }}
 
-    - name: Push changes
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: git push origin && git push --tags
+      - name: Bump package version to new dev version (e.g. 1.2.3 => 1.2.4-dev)
+        run: |
+          npm --no-git-tag-version version patch                                                              # Determine next release version
+          DEV_VERSION=$(npm pkg get version | tr -d \")-dev && echo "DEV_VERSION=$DEV_VERSION" >> $GITHUB_ENV # Determine DEV_VERSION with -dev suffix
+          npm --no-git-tag-version version $DEV_VERSION                                                       # Set main to $DEV_VERSION
 
-    - id: get-changelog
-      name: Get version changelog
-      uses: superfaceai/release-changelog-action@v2
-      with:
-        path-to-changelog: CHANGELOG.md
-        version: ${{ env.RELEASE_VERSION }}
-        operation: read
+      - name: Commit version bump
+        run: |
+          git add "package.json"
+          git commit -m "chore: bump up version to ${{ env.DEV_VERSION }}"
 
-    - name: Update GitHub release documentation
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ env.RELEASE_VERSION }}
-        body: ${{ steps.get-changelog.outputs.changelog }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-#    - name: Publish npm package
-#      run: |
-#        npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
-#        npm publish --verbose --access=public --tag=${{ env.RELEASE_TAG }}
-#      env:
-#        NPM_TOKEN: ${{ secrets.NPMJS_ACCESS_TOKEN }}
+      - name: Push changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: git push origin && git push --tags
